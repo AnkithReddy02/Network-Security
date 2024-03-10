@@ -1,0 +1,103 @@
+################################################################
+## tcpdump
+################################################################
+
+ifconfig                              # show interfaces
+man tcpdump
+tcpdump -i eth0
+tcpdump icmp                          # second console: ping 8.8.8.8
+tcpdump -e icmp                       # vs. tcpdump icmp
+tcpdump -e -vvv icmp
+tcpdump -e -vvv -n icmp
+tcpdump -n icmp                       # no DNS resolution -> faster output
+tcpdump -n tcp                        # second console: wget www.google.com 
+tcpdump -n -A tcp                     # payload in ASCII
+tcpdump -n -X tcp                     # payload in hex + ASCII
+tcpdump -n -X tcp dst port 80         # show only HTTP requests
+tcpdump -n -X tcp port 443            # wget https://www.google.com 
+tcpdump -n icmp and host 8.8.8.8  
+tcpdump -n icmp and src host 8.8.8.8  # only responses
+tcpdump -n -w trace.pcap              # write trace to file
+tcpdump -n -r trace.pcap              # read trace from file
+tcpdump -n -t -r trace.pcap           # drop timestamps to declutter output
+
+# How many packets does the trace contain?
+tcpdump -n -t -r trace.pcap |wc -l
+
+
+################################################################
+## Wireshark:
+################################################################
+
+Kali> wireshark trace.pcap
+
+F11 for full screen
+
+Include port number columns
+Edit -> Preferences -> Appearance -> Columns
+Click '+' and add "Src port (unresolved)" and "Dest port (unresolved)"
+drag the new entries to place them next to the src/dst IP addresses
+right-click on each entry and select "Align Left"
+
+Right-click on a TCP packet -> follow TCP stream
+
+Select a Client Hello packet and navigate to Handshake Protocol ->
+Extension: Server Name -> Server Name Indication
+
+
+################################################################
+## Scapy
+################################################################
+
+kali> sudo scapy
+>>>
+
+# list of available Scapy commands
+>>> lsc()
+
+# let's sniff a few packets
+>>> pkt = sniff(count=100)
+
+# wget www.google.com
+# wget www.facebook.com
+
+>>> pkt
+>>> pkt.summary()
+
+# let's inspect a packet
+>>> pkt[0].summary()
+>>> ls()           # list all available network protocols
+>>> pkt[0]         # show all parsed fields
+>>> pkt[0].show()  # cleaner output
+>>> pkt[0][IP].summary()
+
+# mix with Python!
+>>> for p in pkt:
+...   if p.haslayer(TCP):
+...     print ("src port: " + str(p.getlayer(TCP).sport))
+
+pkt.sessions()
+sessions = pkt.sessions()
+sessions['TCP 192.168 ... 443'].summary()
+
+
+################################################################
+## ARP poisoning
+################################################################
+
+# Setup:
+
+VM1: Kali 2023         192.168.9.131
+VM2: Win 10 VM         192.168.9.130
+VMWare gateway:        192.168.9.2
+
+Win> ping -n 1000 8.8.8.8
+
+Kali> sudo su root
+Kali> echo 1 > /proc/sys/net/ipv4/ip_forward
+# console 1
+Kali> arpspoof -i eth0 -t 192.168.9.130 192.168.9.2
+# console 2
+Kali> arpspoof -i eth0 -t 192.168.9.2 192.168.9.130
+# console 3
+Kali> tcpdump -n -e icmp   # MAC addresses differ in each pair of packets
