@@ -167,7 +167,7 @@ func transferDecryptedData(socketSource net.Conn, socketDestination net.Conn, pa
 }
 
 // transferData handles the encryption and transfer of data between two sockets.
-func transferData(sourceSocket net.Conn, destinationSocket net.Conn, encryptionKey string, isServerMode bool) {
+func transferEncryptedData(sourceSocket net.Conn, destinationSocket net.Conn, encryptionKey string, isServerMode bool) {
 	for {
 		var bytesRead int
 		dataBuffer := make([]byte, 1024) // Buffer to store data read from source.
@@ -255,7 +255,7 @@ func transferData(sourceSocket net.Conn, destinationSocket net.Conn, encryptionK
 // Run Server
 func runServer(listenPort string, passphrase string, dstHost string, dstPort string) {
 	serviceAddress := dstHost + ":" + dstPort
-	log.Println("pbproxy Server: Preparing to connect to service at %s", serviceAddress)
+	log.Printf("pbproxy Server: Preparing to connect to service at %s", serviceAddress)
 
 	listen, err := net.Listen("tcp", ":"+listenPort)
 	if err != nil {
@@ -263,7 +263,7 @@ func runServer(listenPort string, passphrase string, dstHost string, dstPort str
 		os.Exit(1)
 	}
 	defer listen.Close()
-	log.Println("Server is now listening on port %s", listenPort)
+	log.Printf("Server is now listening on port %s", listenPort)
 
 	for {
 		log.Println("Server main thread waiting for incoming client connections...")
@@ -278,14 +278,14 @@ func runServer(listenPort string, passphrase string, dstHost string, dstPort str
 		// Connecting to the destination service
 		serviceSocket, err := net.Dial("tcp", serviceAddress)
 		if err != nil {
-			log.Println("ERROR: Failed to establish connection with service at %s: %v", serviceAddress, err)
+			log.Printf("ERROR: Failed to establish connection with service at %s: %v", serviceAddress, err)
 			clientSocket.Close() // Make sure to close the client socket if the service connection fails
 			return               // Consider whether to retry the connection or just log and continue
 		}
 
 		log.Printf("Connection established with service at %s. Starting data transfer routines.", serviceAddress)
 		go transferDecryptedData(clientSocket, serviceSocket, passphrase, true)
-		go transferData(clientSocket, serviceSocket, passphrase, true)
+		go transferEncryptedData(clientSocket, serviceSocket, passphrase, true)
 	}
 }
 
@@ -296,13 +296,13 @@ func runClient(passphrase string, dstHost string, dstPort string) {
 
 	socketSource, err := net.Dial("tcp", serverAddress)
 	if err != nil {
-		log.Println("ERROR: Failed to establish a connection with %s: %v", serverAddress, err)
+		log.Printf("ERROR: Failed to establish a connection with %s: %v", serverAddress, err)
 		os.Exit(1) // Exit with status 1 indicating a general error
 	}
-	log.Println("Connected successfully to server at %s", serverAddress)
+	log.Printf("Connected successfully to server at %s", serverAddress)
 
 	// Starting goroutine to transfer data
-	go transferData(socketSource, nil, passphrase, false)
+	go transferEncryptedData(socketSource, nil, passphrase, false)
 
 	// Transfer decrypted data in the main thread
 	transferDecryptedData(socketSource, nil, passphrase, false)
