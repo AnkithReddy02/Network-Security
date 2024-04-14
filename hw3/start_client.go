@@ -9,7 +9,7 @@ import (
 // Run Client
 func runClient(passphrase string, dstHost string, dstPort string) {
 	serverAddress := dstHost + ":" + dstPort
-	log.Printf("pbproxy Client: Attempting to connect to server at %s", serverAddress)
+	log.Printf("JumpProxy Client: Attempting to connect to server at %s", serverAddress)
 
 	socketSource, err := net.Dial("tcp", serverAddress)
 	if err != nil {

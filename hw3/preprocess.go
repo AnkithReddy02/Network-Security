@@ -15,7 +15,7 @@ func setupLogging() {
 	}
 	// defer logfile.Close()
 	log.SetOutput(logfile)
-	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile) // Enhanced log formatting
+	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 }
 
 func parseFlagsAndArgs() (string, string, []string) {

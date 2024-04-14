@@ -9,7 +9,7 @@ import (
 // Run Server
 func runServer(listenPort string, passphrase string, dstHost string, dstPort string) {
 	serviceAddress := dstHost + ":" + dstPort
-	log.Printf("pbproxy Server: Preparing to connect to service at %s", serviceAddress)
+	log.Printf("JumpProxy Server: Preparing to connect to service at %s", serviceAddress)
 
 	listen, err := net.Listen("tcp", ":"+listenPort)
 	if err != nil {
@@ -33,8 +33,8 @@ func runServer(listenPort string, passphrase string, dstHost string, dstPort str
 		serviceSocket, err := net.Dial("tcp", serviceAddress)
 		if err != nil {
 			log.Printf("ERROR: Failed to establish connection with service at %s: %v", serviceAddress, err)
-			clientSocket.Close() // Make sure to close the client socket if the service connection fails
-			return               // Consider whether to retry the connection or just log and continue
+			clientSocket.Close() // Close the connection
+			return
 		}
 
 		log.Printf("Connection established with service at %s. Starting data transfer routines.", serviceAddress)
