@@ -52,4 +52,4 @@ Brief Description:
         3. Writes the decrypted data to *socket2*
 
 Sources:
-GPT, Stackoverflow
+1. https://stackoverflow.com/a/5669474
