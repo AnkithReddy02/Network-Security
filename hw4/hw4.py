@@ -31,13 +31,18 @@ def receive_data(sock, timeout=3):
     sock.setblocking(0)
     total_data = []
     while True:
-        ready = select.select([sock], [], [], timeout)
-        if not ready[0]:
-            break  # No more data available
-        data = sock.recv(1024)
-        if not data:
-            break  # No more data to read
-        total_data.append(data)
+        try:
+
+            ready = select.select([sock], [], [], timeout)
+            if not ready[0]:
+                break  # No more data available
+            data = sock.recv(1024)
+            if not data:
+                break  # No more data to read
+            total_data.append(data)
+        except ssl.SSLWantReadError:
+            continue
+        
     return b''.join(total_data) if total_data else None
 
 import traceback
@@ -54,9 +59,6 @@ def send_probe(ip, port, message, use_tls=False):
             sock.do_handshake()
         sock.sendall(message.encode())
         return receive_data(sock), 'TLS' if use_tls else 'TCP'
-    except ssl.SSLWantReadError:
-        response = receive_data(sock)
-        return response, 'TLS'
     except socket.timeout:
         print(f"Timeout connecting to {ip}:{port}")
         return None, 'Timeout'
