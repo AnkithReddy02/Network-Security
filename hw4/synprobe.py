@@ -6,6 +6,8 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import logging
 import traceback
 
+states = ["1. TCP server-initiated", "2. TLS server-initiated", "3. HTTP - TCP client-initiated", "4. HTTPS - TLS client-initiated", "5. Generic TCP server", "6. Generic TLS server" ]
+
 def parse_arguments():
     parser = argparse.ArgumentParser(description="TCP Service Fingerprinting Tool - synprobe")
     parser.add_argument("-p", "--port", help="Port range to scan, e.g., 80 or 80-100")
@@ -96,39 +98,39 @@ def print_response(response):
 
 def probe_port(ip, port):
     probes = [
-        ("2. TLS server-initiated", "", True),
-        ("4. TLS client-initiated", "GET / HTTP/1.0\r\n\r\n", True),
-        ("6. Generic TLS server", "\r\n\r\n\r\n\r\n", True),
-        ("1. TCP server-initiated", "", False),
-        ("3. TCP client-initiated", "GET / HTTP/1.0\r\n\r\n", False),
-        ("5. Generic TCP server", "\r\n\r\n\r\n\r\n", False),
+        (1, "", True),
+        (3, "GET / HTTP/1.0\r\n\r\n", True),
+        (5, "\r\n\r\n\r\n\r\n", True),
+        (0, "", False),
+        (2, "GET / HTTP/1.0\r\n\r\n", False),
+        (4, "\r\n\r\n\r\n\r\n", False),
     ]
-    for description, data, use_tls in probes:
-        response, status = send_probe(ip, port, data, description, use_tls)
-        if description == '6. Generic TLS server' and status == 'TLS':
+    for state_num, data, use_tls in probes:
+        response, status = send_probe(ip, port, data, states[state_num], use_tls)
+        if state_num == 5 and status == 'TLS':
             if response:
-                print(f"\n\nPort {port}: {description} -")
+                print(f"\n\nPort {port}: {states[state_num]} -")
                 print_response(response)
             else:
-                print(f"\n\nPort {port}: {description} -")
+                print(f"\n\nPort {port}: {states[state_num]} -")
                 print('Data: ', None)
                 print('\n\n')
 
             break
 
-        if description == '5. Generic TCP server' and status == 'TCP':
+        if state_num == 4 and status == 'TCP':
             if response:
-                print(f"\n\nPort {port}: {description} -")
+                print(f"\n\nPort {port}: {states[state_num]} -")
                 print_response('Data: ', response)
             else:
-                print(f"\n\nPort {port}: {description} -")
+                print(f"\n\nPort {port}: {states[state_num]} -")
                 print('Data: ', None)
                 print('\n\n')
 
             break
 
         if response:
-            print(f"\n\nPort {port}: {description} -")
+            print(f"\n\nPort {port}: {states[state_num]} -")
             print_response(response)
 
             break
